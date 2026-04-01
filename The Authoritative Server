@@ -1,0 +1,25 @@
+import socket
+
+# Your project-specific records
+RECORDS = {
+    "www.cisco.test": {"type": "A", "value": "192.168.1.10", "ttl": 300},
+    "mail.cisco.test": {"type": "A", "value": "192.168.1.11", "ttl": 300},
+    "cisco.test": {"type": "CNAME", "value": "alias-cisco.test", "ttl": 300}
+}
+
+def start_authoritative_server(port=5354):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(('127.0.0.1', port))
+    print(f"--- Authoritative Server (Port {port}) is Online ---")
+
+    while True:
+        data, addr = sock.recvfrom(512)
+        query = data.decode('utf-8')
+        print(f"[AUTH] Query received for: {query}")
+        
+        # Simple lookup logic
+        response = RECORDS.get(query, "Error: Record Not Found")
+        sock.sendto(str(response).encode('utf-8'), addr)
+
+if __name__ == "__main__":
+    start_authoritative_server()
