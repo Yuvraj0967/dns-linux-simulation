@@ -1,0 +1,32 @@
+import socket
+
+def query_authoritative(hostname):
+    # This points to our Authoritative node
+    auth_addr = ('127.0.0.1', 5354)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    
+    try:
+        sock.sendto(hostname.encode('utf-8'), auth_addr)
+        data, _ = sock.recvfrom(512)
+        return data.decode('utf-8')
+    except Exception as e:
+        return f"Error connecting to Auth Server: {e}"
+    finally:
+        sock.close()
+
+def start_resolver(port=5300): # Port 5300 used to avoid sudo requirements
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(('127.0.0.1', port))
+    print(f"--- Recursive Resolver (Port {port}) is Online ---")
+
+    while True:
+        data, addr = sock.recvfrom(512)
+        hostname = data.decode('utf-8')
+        print(f"[RESOLVER] Client asked for: {hostname}")
+        
+        # Get data from Authoritative server
+        result = query_authoritative(hostname)
+        sock.sendto(result.encode('utf-8'), addr)
+
+if __name__ == "__main__":
+    start_resolver()
